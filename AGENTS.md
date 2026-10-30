@@ -1,7 +1,7 @@
 # Plan: QGIS 4 "CoVadem ENC" Processing plugin (from AddEncMaps.py)
 
 ## Problem
-`AddEncMaps.py` is a console script: pick folder → for every `*.000` (S-57 ENC) load the `DEPARE`
+Pick folder → for every `*.000` (S-57 ENC) load the `DEPARE`
 layer, apply a graduated "Blues" renderer on `DRVAL1` (0–7 m, 14 classes + invalid <0 purple + >7),
 add to a layer-tree group. Needs to become a proper QGIS 4.0+ (Qt6) plugin exposed in the
 Processing Toolbox, plus an option to convert `.000` → GeoParquet first (GDAL S-57 access is slow,
@@ -14,7 +14,7 @@ mostly because S-57 has no spatial index and every pan/zoom re-reads 200+ files)
 - Layer: **DEPARE only**, styled exactly as today (renderer logic preserved).
 - UI (assumed, user unavailable): standard Processing dialog with well-organised params,
   advanced params flagged `FlagAdvanced`; validation in `checkParameterValues` for invalid combos.
-- Test data: `C:\Users\PaulRysiavets\Projects\autena-bienc-generator-s3\olr2026\2026\1028`
+- Test data: `tests\example`
   (208 flat `.000` files, ~132 MB, max 3.2 MB). DEPARE has `Geometry: Unknown`, EPSG:4326,
   fields incl. `DRVAL1/DRVAL2`, StringList/IntegerList columns.
 - Note: standalone `ogrinfo` needs `GDAL_DATA=...\apps\gdal\share\gdal` for S-57 object classes
