@@ -18,8 +18,17 @@ from .s57 import DEPARE, open_s57
 FORMAT_VERSION = 1
 SOURCE_FIELD = "source_file"
 VSIMEM_ROOT = "/vsimem/covadem_enc"
-LAYER_CREATION_OPTIONS = ["COMPRESSION=ZSTD", "SORT_BY_BBOX=YES", "WRITE_COVERING_BBOX=YES"]
-_POLYGONAL = {ogr.wkbPolygon, ogr.wkbMultiPolygon, ogr.wkbCurvePolygon, ogr.wkbMultiSurface}
+LAYER_CREATION_OPTIONS = [
+    "COMPRESSION=ZSTD",
+    "SORT_BY_BBOX=YES",
+    "WRITE_COVERING_BBOX=YES",
+]
+_POLYGONAL = {
+    ogr.wkbPolygon,
+    ogr.wkbMultiPolygon,
+    ogr.wkbCurvePolygon,
+    ogr.wkbMultiSurface,
+}
 
 
 class Layout(IntEnum):
@@ -111,7 +120,9 @@ def merged_output_path(output_folder, input_folder, layer_name=DEPARE):
 
 
 def per_file_output_path(output_folder, source, layer_name=DEPARE):
-    return _join(output_folder, f"{os.path.splitext(source.relpath)[0]}_{layer_name}.parquet")
+    return _join(
+        output_folder, f"{os.path.splitext(source.relpath)[0]}_{layer_name}.parquet"
+    )
 
 
 def _mkdirs(folder):
@@ -207,7 +218,9 @@ def _merge_schema(fields, defn):
             fields[name].SetWidth(fd.GetWidth())
             fields[name].SetPrecision(fd.GetPrecision())
         elif fields[name].GetType() != fd.GetType():
-            fields[name] = ogr.FieldDefn(name, _merge_field_type(fields[name].GetType(), fd.GetType()))
+            fields[name] = ogr.FieldDefn(
+                name, _merge_field_type(fields[name].GetType(), fd.GetType())
+            )
 
 
 def _default_srs():
@@ -222,7 +235,11 @@ def _as_multipolygon(geom):
     gtype = ogr.GT_Flatten(geom.GetGeometryType())
     if gtype not in _POLYGONAL:
         return None
-    geom = geom.GetLinearGeometry() if gtype in (ogr.wkbCurvePolygon, ogr.wkbMultiSurface) else geom.Clone()
+    geom = (
+        geom.GetLinearGeometry()
+        if gtype in (ogr.wkbCurvePolygon, ogr.wkbMultiSurface)
+        else geom.Clone()
+    )
     return ogr.ForceToMultiPolygon(geom)
 
 
@@ -262,7 +279,9 @@ def _scan(sources, layer_name, result, feedback, progress_start, progress_span):
     return _Schema(matching, list(fields.values()), srs or _default_srs())
 
 
-def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_start, progress_span):
+def _write_parquet(
+    dst_path, schema, layer_name, result, feedback, progress_start, progress_span
+):
     """Write the `layer_name` layer of all `schema.sources` into one GeoParquet file (atomically)."""
     tmp_path = f"{dst_path}.tmp{os.getpid()}.parquet"
     _remove(tmp_path)
@@ -270,8 +289,10 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
     out_ds = driver.CreateDataSource(tmp_path)
     try:
         out_layer = out_ds.CreateLayer(
-            os.path.splitext(os.path.basename(dst_path))[0], schema.srs, ogr.wkbMultiPolygon,
-            options=LAYER_CREATION_OPTIONS
+            os.path.splitext(os.path.basename(dst_path))[0],
+            schema.srs,
+            ogr.wkbMultiPolygon,
+            options=LAYER_CREATION_OPTIONS,
         )
         out_layer.CreateField(ogr.FieldDefn(SOURCE_FIELD, ogr.OFTString))
         for fd in schema.fields:
@@ -287,8 +308,10 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
             if layer is None:
                 raise RuntimeError(f"Could not read {layer_name} from {source.relpath}")
             in_defn = layer.GetLayerDefn()
-            index_map = [out_defn.GetFieldIndex(in_defn.GetFieldDefn(j).GetName()) for j in
-                         range(in_defn.GetFieldCount())]
+            index_map = [
+                out_defn.GetFieldIndex(in_defn.GetFieldDefn(j).GetName())
+                for j in range(in_defn.GetFieldCount())
+            ]
             relpath = source.relpath.replace("\\", "/")
             for feature in layer:
                 geom = _as_multipolygon(feature.GetGeometryRef())
@@ -318,13 +341,13 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
 
 
 def convert_sources(
-        sources,
-        input_folder,
-        output_folder,
-        layout=Layout.MERGED,
-        reuse_existing=True,
-        layer_name=DEPARE,
-        feedback=None,
+    sources,
+    input_folder,
+    output_folder,
+    layout=Layout.MERGED,
+    reuse_existing=True,
+    layer_name=DEPARE,
+    feedback=None,
 ):
     """Convert `sources` (list of S57Source) to GeoParquet in `output_folder`.
 
@@ -333,7 +356,9 @@ def convert_sources(
     feedback = feedback or _NullFeedback()
     result = ConversionResult()
     if not parquet_driver_available():
-        raise RuntimeError("The GDAL Parquet driver is not available in this QGIS installation")
+        raise RuntimeError(
+            "The GDAL Parquet driver is not available in this QGIS installation"
+        )
 
     warnings = []
 
@@ -343,15 +368,28 @@ def convert_sources(
         elif err_class >= gdal.CE_Failure:
             feedback.pushWarning(f"GDAL: {msg}")
 
-    with gdal.ExceptionMgr(useExceptions=True), ogr.ExceptionMgr(useExceptions=True), osr.ExceptionMgr(
-            useExceptions=True):
+    with (
+        gdal.ExceptionMgr(useExceptions=True),
+        ogr.ExceptionMgr(useExceptions=True),
+        osr.ExceptionMgr(useExceptions=True),
+    ):
         gdal.PushErrorHandler(error_handler)
         try:
             _mkdirs(output_folder)
             if Layout(layout) == Layout.MERGED:
-                _convert_merged(sources, input_folder, output_folder, reuse_existing, layer_name, result, feedback)
+                _convert_merged(
+                    sources,
+                    input_folder,
+                    output_folder,
+                    reuse_existing,
+                    layer_name,
+                    result,
+                    feedback,
+                )
             else:
-                _convert_per_file(sources, output_folder, reuse_existing, layer_name, result, feedback)
+                _convert_per_file(
+                    sources, output_folder, reuse_existing, layer_name, result, feedback
+                )
         finally:
             gdal.PopErrorHandler()
     result.warnings = len(warnings)
@@ -359,7 +397,9 @@ def convert_sources(
     return result
 
 
-def _convert_merged(sources, input_folder, output_folder, reuse_existing, layer_name, result, feedback):
+def _convert_merged(
+    sources, input_folder, output_folder, reuse_existing, layer_name, result, feedback
+):
     dst_path = merged_output_path(output_folder, input_folder, layer_name)
     if reuse_existing and _merged_is_fresh(dst_path, sources, layer_name):
         feedback.pushInfo(f"Reusing up-to-date GeoParquet file {dst_path}")
@@ -381,7 +421,9 @@ def _convert_merged(sources, input_folder, output_folder, reuse_existing, layer_
     result.converted = 1
 
 
-def _convert_per_file(sources, output_folder, reuse_existing, layer_name, result, feedback):
+def _convert_per_file(
+    sources, output_folder, reuse_existing, layer_name, result, feedback
+):
     count = max(len(sources), 1)
     for i, source in enumerate(sources):
         if feedback.isCanceled():
@@ -395,7 +437,15 @@ def _convert_per_file(sources, output_folder, reuse_existing, layer_name, result
             if schema.sources:
                 try:
                     _mkdirs(os.path.dirname(dst_path))
-                    _write_parquet(dst_path, schema, layer_name, result, feedback, 100 * i / count, 100 / count)
+                    _write_parquet(
+                        dst_path,
+                        schema,
+                        layer_name,
+                        result,
+                        feedback,
+                        100 * i / count,
+                        100 / count,
+                    )
                     result.files.append(dst_path)
                     result.converted += 1
                 except RuntimeError as err:

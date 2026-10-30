@@ -80,21 +80,33 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
     def initAlgorithm(self, config=None):  # pylint: disable=invalid-name
         self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT_FOLDER, self.tr("Folder with S-57 (.000) files"), behavior=Qgis.ProcessingFileParameterBehavior.Folder
+                self.INPUT_FOLDER,
+                self.tr("Folder with S-57 (.000) files"),
+                behavior=Qgis.ProcessingFileParameterBehavior.Folder,
             )
         )
-        self.addParameter(QgsProcessingParameterBoolean(self.RECURSIVE, self.tr("Include subfolders"), defaultValue=False))
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.RECURSIVE, self.tr("Include subfolders"), defaultValue=False
+            )
+        )
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.SOURCE_MODE,
                 self.tr("Source mode"),
-                options=[self.tr("Read S-57 files directly"), self.tr("Convert to GeoParquet, then load (recommended)")],
+                options=[
+                    self.tr("Read S-57 files directly"),
+                    self.tr("Convert to GeoParquet, then load (recommended)"),
+                ],
                 defaultValue=MODE_PARQUET,
             )
         )
         self.addParameter(
             QgsProcessingParameterEnum(
-                self.PARQUET_LAYOUT, self.tr("GeoParquet layout"), options=[self.tr(o) for o in LAYOUT_LABELS], defaultValue=int(Layout.MERGED)
+                self.PARQUET_LAYOUT,
+                self.tr("GeoParquet layout"),
+                options=[self.tr(o) for o in LAYOUT_LABELS],
+                defaultValue=int(Layout.MERGED),
             )
         )
         self.addParameter(
@@ -115,28 +127,59 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
         )
 
         advanced = [
-            QgsProcessingParameterBoolean(self.REUSE_EXISTING, self.tr("Reuse up-to-date GeoParquet files"), defaultValue=True),
+            QgsProcessingParameterBoolean(
+                self.REUSE_EXISTING,
+                self.tr("Reuse up-to-date GeoParquet files"),
+                defaultValue=True,
+            ),
             QgsProcessingParameterString(
-                self.GROUP_NAME, self.tr("Layer group name (default: input folder)"), optional=True
+                self.GROUP_NAME,
+                self.tr("Layer group name (default: input folder)"),
+                optional=True,
             ),
-            QgsProcessingParameterBoolean(self.APPLY_STYLE, self.tr("Apply depth style"), defaultValue=True),
-            QgsProcessingParameterNumber(
-                self.MIN_DEPTH, self.tr("Style: minimum depth (m)"), Qgis.ProcessingNumberParameterType.Double, defaultValue=0.0
-            ),
-            QgsProcessingParameterNumber(
-                self.MAX_DEPTH, self.tr("Style: maximum depth (m)"), Qgis.ProcessingNumberParameterType.Double, defaultValue=7.0
+            QgsProcessingParameterBoolean(
+                self.APPLY_STYLE, self.tr("Apply depth style"), defaultValue=True
             ),
             QgsProcessingParameterNumber(
-                self.CLASSES, self.tr("Style: number of classes"), Qgis.ProcessingNumberParameterType.Integer, defaultValue=14, minValue=1, maxValue=100
+                self.MIN_DEPTH,
+                self.tr("Style: minimum depth (m)"),
+                Qgis.ProcessingNumberParameterType.Double,
+                defaultValue=0.0,
+            ),
+            QgsProcessingParameterNumber(
+                self.MAX_DEPTH,
+                self.tr("Style: maximum depth (m)"),
+                Qgis.ProcessingNumberParameterType.Double,
+                defaultValue=7.0,
+            ),
+            QgsProcessingParameterNumber(
+                self.CLASSES,
+                self.tr("Style: number of classes"),
+                Qgis.ProcessingNumberParameterType.Integer,
+                defaultValue=14,
+                minValue=1,
+                maxValue=100,
             ),
         ]
         for param in advanced:
             param.setFlags(param.flags() | Qgis.ProcessingParameterFlag.Advanced)
             self.addParameter(param)
 
-        self.addOutput(QgsProcessingOutputMultipleLayers(self.OUTPUT_LAYERS, self.tr("Loaded layers")))
-        self.addOutput(QgsProcessingOutputString(self.PARQUET_FILES, self.tr("GeoParquet files (';'-separated)")))
-        self.addOutput(QgsProcessingOutputNumber(self.LAYER_COUNT, self.tr("Number of loaded layers")))
+        self.addOutput(
+            QgsProcessingOutputMultipleLayers(
+                self.OUTPUT_LAYERS, self.tr("Loaded layers")
+            )
+        )
+        self.addOutput(
+            QgsProcessingOutputString(
+                self.PARQUET_FILES, self.tr("GeoParquet files (';'-separated)")
+            )
+        )
+        self.addOutput(
+            QgsProcessingOutputNumber(
+                self.LAYER_COUNT, self.tr("Number of loaded layers")
+            )
+        )
 
     def checkParameterValues(self, parameters, context):  # pylint: disable=invalid-name
         ok, msg = super().checkParameterValues(parameters, context)
@@ -144,24 +187,37 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
             return ok, msg
         if self.parameterAsEnum(parameters, self.SOURCE_MODE, context) == MODE_PARQUET:
             location = self.parameterAsEnum(parameters, self.PARQUET_LOCATION, context)
-            if location == Location.CUSTOM and not self.parameterAsFile(parameters, self.PARQUET_FOLDER, context):
-                return False, self.tr("Select a custom GeoParquet folder, or choose another GeoParquet location.")
+            if location == Location.CUSTOM and not self.parameterAsFile(
+                parameters, self.PARQUET_FOLDER, context
+            ):
+                return False, self.tr(
+                    "Select a custom GeoParquet folder, or choose another GeoParquet location."
+                )
             if not parquet_driver_available():
-                return False, self.tr("The GDAL Parquet driver is not available; use 'Read S-57 files directly'.")
-        if self.parameterAsDouble(parameters, self.MAX_DEPTH, context) <= self.parameterAsDouble(parameters, self.MIN_DEPTH, context):
+                return False, self.tr(
+                    "The GDAL Parquet driver is not available; use 'Read S-57 files directly'."
+                )
+        if self.parameterAsDouble(
+            parameters, self.MAX_DEPTH, context
+        ) <= self.parameterAsDouble(parameters, self.MIN_DEPTH, context):
             return False, self.tr("Maximum depth must be greater than minimum depth.")
         return True, ""
 
     def processAlgorithm(self, parameters, context, feedback):  # pylint: disable=invalid-name
         folder = self.parameterAsFile(parameters, self.INPUT_FOLDER, context)
         if not folder or not os.path.isdir(folder):
-            raise QgsProcessingException(self.tr("Input folder does not exist: {}").format(folder))
+            raise QgsProcessingException(
+                self.tr("Input folder does not exist: {}").format(folder)
+            )
         folder = os.path.abspath(folder)
         recursive = self.parameterAsBool(parameters, self.RECURSIVE, context)
         mode = self.parameterAsEnum(parameters, self.SOURCE_MODE, context)
 
         self._to_load = []
-        self._group_name = self.parameterAsString(parameters, self.GROUP_NAME, context).strip() or folder
+        self._group_name = (
+            self.parameterAsString(parameters, self.GROUP_NAME, context).strip()
+            or folder
+        )
         self._style = None
         if self.parameterAsBool(parameters, self.APPLY_STYLE, context):
             self._style = (
@@ -172,7 +228,9 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
 
         sources = find_s57_files(folder, recursive)
         if not sources:
-            raise QgsProcessingException(self.tr("No .000 files found in {}").format(folder))
+            raise QgsProcessingException(
+                self.tr("No .000 files found in {}").format(folder)
+            )
         feedback.pushInfo(self.tr("Found {} S-57 file(s)").format(len(sources)))
 
         parquet_files = []
@@ -181,24 +239,42 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
                 if feedback.isCanceled():
                     return {}
                 if has_layer(source.path, DEPARE):
-                    self._to_load.append((f"{source.path}|layername={DEPARE}", f"{source.relpath} - {DEPARE}"))
+                    self._to_load.append(
+                        (
+                            f"{source.path}|layername={DEPARE}",
+                            f"{source.relpath} - {DEPARE}",
+                        )
+                    )
                 else:
-                    feedback.pushInfo(self.tr("No DEPARE layer in {}").format(source.relpath))
+                    feedback.pushInfo(
+                        self.tr("No DEPARE layer in {}").format(source.relpath)
+                    )
                 feedback.setProgress(100 * (i + 1) / len(sources))
         else:
-            layout = Layout(self.parameterAsEnum(parameters, self.PARQUET_LAYOUT, context))
-            location = Location(self.parameterAsEnum(parameters, self.PARQUET_LOCATION, context))
+            layout = Layout(
+                self.parameterAsEnum(parameters, self.PARQUET_LAYOUT, context)
+            )
+            location = Location(
+                self.parameterAsEnum(parameters, self.PARQUET_LOCATION, context)
+            )
             output_folder = resolve_output_folder(
-                location, folder, recursive, self.parameterAsFile(parameters, self.PARQUET_FOLDER, context)
+                location,
+                folder,
+                recursive,
+                self.parameterAsFile(parameters, self.PARQUET_FOLDER, context),
             )
             reuse = self.parameterAsBool(parameters, self.REUSE_EXISTING, context)
             feedback.pushInfo(self.tr("GeoParquet folder: {}").format(output_folder))
             if location == Location.MEMORY:
                 feedback.pushWarning(
-                    self.tr("In-memory GeoParquet layers are lost when QGIS closes and cannot be restored from a saved project.")
+                    self.tr(
+                        "In-memory GeoParquet layers are lost when QGIS closes and cannot be restored from a saved project."
+                    )
                 )
             try:
-                result = convert_sources(sources, folder, output_folder, layout, reuse, feedback=feedback)
+                result = convert_sources(
+                    sources, folder, output_folder, layout, reuse, feedback=feedback
+                )
             except ConversionCanceled:
                 feedback.pushWarning(self.tr("Conversion canceled"))
                 return {}
@@ -208,10 +284,18 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
             parquet_files = result.files
             if layout == Layout.MERGED:
                 label = os.path.basename(os.path.normpath(folder))
-                self._to_load = [(path, f"{label} - {DEPARE}") for path in parquet_files]
+                self._to_load = [
+                    (path, f"{label} - {DEPARE}") for path in parquet_files
+                ]
             else:
-                by_path = {per_file_output_path(output_folder, source): source for source in sources}
-                self._to_load = [(path, f"{by_path[path].relpath} - {DEPARE}") for path in parquet_files]
+                by_path = {
+                    per_file_output_path(output_folder, source): source
+                    for source in sources
+                }
+                self._to_load = [
+                    (path, f"{by_path[path].relpath} - {DEPARE}")
+                    for path in parquet_files
+                ]
 
         if not self._to_load:
             feedback.pushWarning(self.tr("No DEPARE layers found; nothing to load."))
@@ -228,15 +312,23 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
             for uri, name in self._to_load:
                 layer = QgsVectorLayer(uri, name, "ogr", options)
                 if not layer.isValid():
-                    feedback.reportError(self.tr("Failed to load {}").format(uri), False)
+                    feedback.reportError(
+                        self.tr("Failed to load {}").format(uri), False
+                    )
                     continue
                 if self._style is not None:
                     min_depth, max_depth, classes = self._style
-                    apply_depth_renderer(layer, min_val=min_depth, max_val=max_depth, intervals=classes)
+                    apply_depth_renderer(
+                        layer, min_val=min_depth, max_val=max_depth, intervals=classes
+                    )
                 project.addMapLayer(layer, False)
                 group.addLayer(layer)
                 layer_ids.append(layer.id())
-            feedback.pushInfo(self.tr("Added {} layer(s) to group '{}'").format(len(layer_ids), self._group_name))
+            feedback.pushInfo(
+                self.tr("Added {} layer(s) to group '{}'").format(
+                    len(layer_ids), self._group_name
+                )
+            )
         self._to_load = []
         return {self.OUTPUT_LAYERS: layer_ids, self.LAYER_COUNT: len(layer_ids)}
 

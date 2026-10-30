@@ -44,10 +44,20 @@ def apply_depth_renderer(layer, field="DRVAL1", min_val=0.0, max_val=7.0, interv
         lower = min_val + i * range_size
         upper = lower + range_size
         ranges.append(
-            QgsRendererRange(lower, upper, create_symbol(layer, color_ramp.color(i / intervals)), f"{lower:.1f} - {upper:.1f}")
+            QgsRendererRange(
+                lower,
+                upper,
+                create_symbol(layer, color_ramp.color(i / intervals)),
+                f"{lower:.1f} - {upper:.1f}",
+            )
         )
     ranges.append(
-        QgsRendererRange(max_val, max_val * 10, create_symbol(layer, color_ramp.color(1)), f"{max_val:.1f} - {max_val * 10:.1f}")
+        QgsRendererRange(
+            max_val,
+            max_val * 10,
+            create_symbol(layer, color_ramp.color(1)),
+            f"{max_val:.1f} - {max_val * 10:.1f}",
+        )
     )
 
     renderer = QgsGraduatedSymbolRenderer(field, ranges)

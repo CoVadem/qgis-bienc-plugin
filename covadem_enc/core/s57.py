@@ -48,7 +48,9 @@ def open_s57(path):
     """Open an S-57 file read-only with GDAL; returns a gdal.Dataset or None."""
     with gdal.ExceptionMgr(useExceptions=True):
         try:
-            return gdal.OpenEx(path, gdal.OF_VECTOR | gdal.OF_READONLY, allowed_drivers=["S57"])
+            return gdal.OpenEx(
+                path, gdal.OF_VECTOR | gdal.OF_READONLY, allowed_drivers=["S57"]
+            )
         except RuntimeError:
             return None
 

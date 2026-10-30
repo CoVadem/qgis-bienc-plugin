@@ -18,11 +18,11 @@ app = QgsApplication([], False)
 app.initQgis()
 sys.path.append(os.path.join(QgsApplication.pkgDataPath(), "python", "plugins"))
 
-from processing.core.Processing import Processing  # noqa: E402  pylint: disable=wrong-import-position
-from processing.tools import dataobjects  # noqa: E402  pylint: disable=wrong-import-position
+import processing
+from processing.core.Processing import Processing
+from processing.tools import dataobjects
 
-import processing  # noqa: E402  pylint: disable=wrong-import-position
-from covadem_enc.provider import CovademEncProvider  # noqa: E402  pylint: disable=wrong-import-position
+from covadem_enc.provider import CovademEncProvider
 
 Processing.initialize()
 provider = CovademEncProvider()
@@ -54,7 +54,10 @@ def run_load(folder, **params):
 
 
 def main(folder):
-    assert QgsApplication.processingRegistry().providerById("covadem_enc").name() == "CoVadem ENC"
+    assert (
+        QgsApplication.processingRegistry().providerById("covadem_enc").name()
+        == "CoVadem ENC"
+    )
     tmp = tempfile.mkdtemp(prefix="covadem_enc_test_")
     try:
         ids, t = run_load(folder, SOURCE_MODE=0)
@@ -66,11 +69,26 @@ def main(folder):
         cases = [
             ("memory/merged", {"PARQUET_LOCATION": 0, "PARQUET_LAYOUT": 0}),
             ("memory/per-file", {"PARQUET_LOCATION": 0, "PARQUET_LAYOUT": 1}),
-            ("temp/merged", {"PARQUET_LOCATION": 2, "PARQUET_LAYOUT": 0, "REUSE_EXISTING": False}),
-            ("custom/merged", {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 0, "PARQUET_FOLDER": custom}),
-            ("custom/merged reuse", {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 0, "PARQUET_FOLDER": custom}),
-            ("custom/per-file", {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 1, "PARQUET_FOLDER": custom}),
-            ("custom/per-file reuse", {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 1, "PARQUET_FOLDER": custom}),
+            (
+                "temp/merged",
+                {"PARQUET_LOCATION": 2, "PARQUET_LAYOUT": 0, "REUSE_EXISTING": False},
+            ),
+            (
+                "custom/merged",
+                {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 0, "PARQUET_FOLDER": custom},
+            ),
+            (
+                "custom/merged reuse",
+                {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 0, "PARQUET_FOLDER": custom},
+            ),
+            (
+                "custom/per-file",
+                {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 1, "PARQUET_FOLDER": custom},
+            ),
+            (
+                "custom/per-file reuse",
+                {"PARQUET_LOCATION": 3, "PARQUET_LAYOUT": 1, "PARQUET_FOLDER": custom},
+            ),
         ]
         for label, params in cases:
             ids, t = run_load(folder, SOURCE_MODE=1, **params)
@@ -82,15 +100,22 @@ def main(folder):
 
         alg = QgsApplication.processingRegistry().createAlgorithmById(LOAD)
         ok, _msg = alg.checkParameterValues(
-            {"INPUT_FOLDER": folder, "SOURCE_MODE": 1, "PARQUET_LOCATION": 3}, dataobjects.createContext()
+            {"INPUT_FOLDER": folder, "SOURCE_MODE": 1, "PARQUET_LOCATION": 3},
+            dataobjects.createContext(),
         )
         assert not ok, "custom location without folder must be rejected"
 
         out = os.path.join(tmp, "convert")
-        res = processing.run(CONVERT, {"INPUT_FOLDER": folder, "LAYOUT": 1, "OUTPUT_FOLDER": out})
-        print(f"convert per-file: {res['CONVERTED']} converted, {res['FEATURES']} features")
+        res = processing.run(
+            CONVERT, {"INPUT_FOLDER": folder, "LAYOUT": 1, "OUTPUT_FOLDER": out}
+        )
+        print(
+            f"convert per-file: {res['CONVERTED']} converted, {res['FEATURES']} features"
+        )
         assert res["FEATURES"] == direct_count
-        res = processing.run(CONVERT, {"INPUT_FOLDER": folder, "LAYOUT": 1, "OUTPUT_FOLDER": out})
+        res = processing.run(
+            CONVERT, {"INPUT_FOLDER": folder, "LAYOUT": 1, "OUTPUT_FOLDER": out}
+        )
         assert res["CONVERTED"] == 0 and res["REUSED"] > 0
         print("ALL TESTS PASSED")
     finally:
