@@ -38,7 +38,6 @@ covadem_enc/
   LICENSE, README.md
 scripts/ build zip (git archive like cvd plugin, prefix covadem_enc/)
 ```
-`AddEncMaps.py` stays as reference (or moved to `legacy/`).
 
 ## Algorithm 1: Load ENC depth areas (DEPARE)  — group "ENC"
 Parameters:
