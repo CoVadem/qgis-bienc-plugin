@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 
 [dev-packages]
+ruff = "==0.17.3"
+pre-commit = "*"
 
 [requires]
 python_version = "3.14"
