@@ -2,21 +2,22 @@
 name=CoVadem ENC Loader
 qgisMinimumVersion=4.0
 supportsQt6=True
-description=Load S-57 (ENC) depth areas (DEPARE), optionally via fast GeoParquet conversion.
+description=Load S-57 (ENC) depth areas (DEPARE) from .000 files in QGIS 4.0+, optionally converting them to GeoParquet.
 version=0.1.0
 author=CoVadem Services BV
 email=info@covadem.com
 
-about=Processing algorithms (Processing Toolbox > CoVadem ENC) to load DEPARE depth areas from a folder of S-57 .000 files with a depth (DRVAL1) color gradient. S-57 files can first be converted to GeoParquet (one merged file or one file per source; in memory, next to the sources, in a temp folder or a custom folder), which renders much faster than reading many S-57 files directly. Converted files are cached and reused.
+about=Processing algorithms (Processing Toolbox > CoVadem ENC) to load DEPARE depth areas from a folder of S-57 .000 files with a depth (DRVAL1) color gradient. S-57 files can first be converted to GeoParquet (one merged file or one file per source; in memory, next to the sources, in a temp folder or a custom folder), which renders much faster than reading many S-57 files directly. Converted files are cached and reused. Requires QGIS 4.0+ and the GDAL S-57 driver. GeoParquet conversion additionally requires the GDAL Parquet driver. No separate Python packages are required; the plugin uses the QGIS and GDAL Python APIs.
 
 tracker=https://github.com/CoVadem/qgis-bienc-plugin/issues
 repository=https://github.com/CoVadem/qgis-bienc-plugin
+homepage=https://github.com/CoVadem/qgis-bienc-plugin/blob/master/README.md
+license=GPL-2.0-or-later
 
 hasProcessingProvider=yes
 changelog=0.1.0 Initial QGIS 4 release: Load ENC depth areas, Convert ENC to GeoParquet.
 
 tags=enc,s-57,s57,depare,depth,geoparquet,parquet,inland navigation,covadem
-homepage=https://covadem.com
 category=Vector
 icon=icon.svg
 experimental=True

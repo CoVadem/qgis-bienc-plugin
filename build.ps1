@@ -9,6 +9,7 @@ $staging = Join-Path ([System.IO.Path]::GetTempPath()) ("covadem_enc_build_" + [
 try {
     $target = Join-Path $staging "covadem_enc"
     Copy-Item -Recurse (Join-Path $root "covadem_enc") $target
+    Copy-Item (Join-Path $root "LICENSE") $target
     Get-ChildItem -Recurse -Directory $target -Filter "__pycache__" | Remove-Item -Recurse -Force
     $out = Join-Path $root $Output
     New-Item -ItemType Directory -Force (Split-Path -Parent $out) | Out-Null

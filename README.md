@@ -11,6 +11,12 @@ The algorithms are available in **Processing Toolbox → CoVadem ENC → ENC (S-
 | **Load ENC depth areas (DEPARE)** | Loads DEPARE from all `.000` files into a new layer group, either directly from S-57 or via GeoParquet (default). |
 | **Convert ENC to GeoParquet** | Only converts DEPARE to GeoParquet (merged or per file) into an output folder. |
 
+## Requirements
+
+QGIS 4.0+ is required. The plugin uses the GDAL S-57 driver; GeoParquet conversion also requires the
+GDAL Parquet driver. Both are provided by the QGIS/GDAL installation when enabled. No additional
+Python packages are required.
+
 ## GeoParquet mode
 
 Reading many S-57 files through GDAL is slow to render: S-57 has no spatial index, so every pan or zoom
@@ -44,6 +50,10 @@ Benchmark (208 cells, 108,754 DEPARE polygons, QGIS 4.2.2, 1600×1000 render):
 
 Then use QGIS → *Plugins → Manage and Install Plugins → Install from ZIP*.
 For development, link or copy the `covadem_enc` folder into your QGIS profile's `python\plugins` folder.
+
+## License
+
+This plugin is licensed under GPL-2.0-or-later. See [LICENSE](LICENSE).
 
 ## Tests
 
