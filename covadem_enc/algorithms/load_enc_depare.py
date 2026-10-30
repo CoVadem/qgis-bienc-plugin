@@ -102,7 +102,7 @@ class LoadEncDepareAlgorithm(CovademEncAlgorithm):
                 self.PARQUET_LOCATION,
                 self.tr("GeoParquet location"),
                 options=[self.tr(o) for o in LOCATION_LABELS],
-                defaultValue=int(Location.TEMP),
+                defaultValue=int(Location.SOURCE),
             )
         )
         self.addParameter(

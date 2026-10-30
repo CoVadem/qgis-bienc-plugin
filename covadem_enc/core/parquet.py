@@ -28,18 +28,18 @@ class Layout(IntEnum):
 
 
 class Location(IntEnum):
-    MEMORY = 0
-    SOURCE = 1
-    TEMP = 2
-    CUSTOM = 3
+    SOURCE = 0
+    TEMP = 1
+    CUSTOM = 2
+    MEMORY = 3
 
 
 LAYOUT_LABELS = ["One merged GeoParquet file", "One GeoParquet file per source file"]
 LOCATION_LABELS = [
-    "In memory (current QGIS session only)",
     "Next to the source files",
     "System temp folder (cached between sessions)",
     "Custom folder",
+    "In memory (current QGIS session only)",
 ]
 
 
@@ -270,7 +270,8 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
     out_ds = driver.CreateDataSource(tmp_path)
     try:
         out_layer = out_ds.CreateLayer(
-            os.path.splitext(os.path.basename(dst_path))[0], schema.srs, ogr.wkbMultiPolygon, options=LAYER_CREATION_OPTIONS
+            os.path.splitext(os.path.basename(dst_path))[0], schema.srs, ogr.wkbMultiPolygon,
+            options=LAYER_CREATION_OPTIONS
         )
         out_layer.CreateField(ogr.FieldDefn(SOURCE_FIELD, ogr.OFTString))
         for fd in schema.fields:
@@ -286,7 +287,8 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
             if layer is None:
                 raise RuntimeError(f"Could not read {layer_name} from {source.relpath}")
             in_defn = layer.GetLayerDefn()
-            index_map = [out_defn.GetFieldIndex(in_defn.GetFieldDefn(j).GetName()) for j in range(in_defn.GetFieldCount())]
+            index_map = [out_defn.GetFieldIndex(in_defn.GetFieldDefn(j).GetName()) for j in
+                         range(in_defn.GetFieldCount())]
             relpath = source.relpath.replace("\\", "/")
             for feature in layer:
                 geom = _as_multipolygon(feature.GetGeometryRef())
@@ -316,13 +318,13 @@ def _write_parquet(dst_path, schema, layer_name, result, feedback, progress_star
 
 
 def convert_sources(
-    sources,
-    input_folder,
-    output_folder,
-    layout=Layout.MERGED,
-    reuse_existing=True,
-    layer_name=DEPARE,
-    feedback=None,
+        sources,
+        input_folder,
+        output_folder,
+        layout=Layout.MERGED,
+        reuse_existing=True,
+        layer_name=DEPARE,
+        feedback=None,
 ):
     """Convert `sources` (list of S57Source) to GeoParquet in `output_folder`.
 
@@ -341,7 +343,8 @@ def convert_sources(
         elif err_class >= gdal.CE_Failure:
             feedback.pushWarning(f"GDAL: {msg}")
 
-    with gdal.ExceptionMgr(useExceptions=True), ogr.ExceptionMgr(useExceptions=True), osr.ExceptionMgr(useExceptions=True):
+    with gdal.ExceptionMgr(useExceptions=True), ogr.ExceptionMgr(useExceptions=True), osr.ExceptionMgr(
+            useExceptions=True):
         gdal.PushErrorHandler(error_handler)
         try:
             _mkdirs(output_folder)
